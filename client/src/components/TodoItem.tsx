@@ -30,4 +30,4 @@ const TodoItem: React.FC<TodoItemProps> = ({ todo, onToggle, onDelete }) => {
     );
 };
 
-export default TodoItem;
+export default React.memo(TodoItem);

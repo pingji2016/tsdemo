@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Todo } from '../types/Todo';
 import { todoApi } from '../api/todoApi';
 import TodoItem from './TodoItem';
@@ -10,58 +10,64 @@ const TodoList: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        fetchTodos();
+        let isMounted = true;
+        setLoading(true);
+        (async () => {
+            try {
+                const data = await todoApi.getAllTodos();
+                if (!isMounted) return;
+                setTodos(data);
+                setError(null);
+            } catch (err) {
+                if (!isMounted) return;
+                setError('Failed to fetch todos');
+                console.error(err);
+            } finally {
+                if (isMounted) {
+                    setLoading(false);
+                }
+            }
+        })();
+        return () => {
+            isMounted = false;
+        };
     }, []);
 
-    const fetchTodos = async () => {
-        try {
-            setLoading(true);
-            const data = await todoApi.getAllTodos();
-            setTodos(data);
-            setError(null);
-        } catch (err) {
-            setError('Failed to fetch todos');
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleCreateTodo = async (title: string, description?: string) => {
+    const handleCreateTodo = useCallback(async (title: string, description?: string) => {
         try {
             const newTodo = await todoApi.createTodo({
                 title,
                 description,
                 completed: false,
             });
-            setTodos([...todos, newTodo]);
+            setTodos(prev => [...prev, newTodo]);
         } catch (err) {
             setError('Failed to create todo');
             console.error(err);
         }
-    };
+    }, []);
 
-    const handleToggleTodo = async (id: string, completed: boolean) => {
+    const handleToggleTodo = useCallback(async (id: string, completed: boolean) => {
         try {
             const updatedTodo = await todoApi.updateTodo(id, { completed });
-            setTodos(todos.map(todo =>
-                todo.id === id ? updatedTodo : todo
-            ));
+            setTodos(prev =>
+                prev.map(todo => (todo.id === id ? updatedTodo : todo))
+            );
         } catch (err) {
             setError('Failed to update todo');
             console.error(err);
         }
-    };
+    }, []);
 
-    const handleDeleteTodo = async (id: string) => {
+    const handleDeleteTodo = useCallback(async (id: string) => {
         try {
             await todoApi.deleteTodo(id);
-            setTodos(todos.filter(todo => todo.id !== id));
+            setTodos(prev => prev.filter(todo => todo.id !== id));
         } catch (err) {
             setError('Failed to delete todo');
             console.error(err);
         }
-    };
+    }, []);
 
     if (loading) {
         return <div className="loading">Loading...</div>;
