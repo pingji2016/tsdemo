@@ -3,7 +3,7 @@ export interface Todo {
     title: string;
     description?: string;
     completed: boolean;
-    createdAt: Date;
+    createdAt: string;
 }
 
 export type CreateTodoInput = Omit<Todo, 'id' | 'createdAt'>;

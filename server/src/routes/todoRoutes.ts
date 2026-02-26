@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { randomUUID } from 'crypto';
 import { Todo, CreateTodoInput, UpdateTodoInput } from '../models/Todo';
 
 const router = Router();
@@ -8,7 +9,7 @@ let todos: Todo[] = [];
 
 // 获取所有待办事项
 router.get('/todos', (req: Request, res: Response) => {
-    res.json(todos);
+    res.json([...todos].sort((a, b) => b.createdAt.localeCompare(a.createdAt)));
 });
 
 // 获取单个待办事项
@@ -31,11 +32,11 @@ router.post('/todos', (req: Request<{}, {}, CreateTodoInput>, res: Response) => 
     }
 
     const newTodo: Todo = {
-        id: Date.now().toString(),
+        id: randomUUID(),
         title,
         description,
         completed,
-        createdAt: new Date()
+        createdAt: new Date().toISOString()
     };
 
     todos.push(newTodo);

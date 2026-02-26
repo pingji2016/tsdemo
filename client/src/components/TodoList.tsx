@@ -10,26 +10,27 @@ const TodoList: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        let isMounted = true;
+        const controller = new AbortController();
         setLoading(true);
         (async () => {
             try {
-                const data = await todoApi.getAllTodos();
-                if (!isMounted) return;
+                const data = await todoApi.getAllTodos(controller.signal);
+                if (controller.signal.aborted) return;
                 setTodos(data);
                 setError(null);
             } catch (err) {
-                if (!isMounted) return;
-                setError('Failed to fetch todos');
-                console.error(err);
+                if (!controller.signal.aborted) {
+                    setError('Failed to fetch todos');
+                    console.error(err);
+                }
             } finally {
-                if (isMounted) {
+                if (!controller.signal.aborted) {
                     setLoading(false);
                 }
             }
         })();
         return () => {
-            isMounted = false;
+            controller.abort();
         };
     }, []);
 
